@@ -1,0 +1,10 @@
+{
+  "schemaVersion": 1,
+  "id": "examplegametest",
+  "version": "1",
+  "entrypoints": {
+    "fabric-gametest": [
+      "com.github.turtton.exampleuitest.ChestUITest"
+    ]
+  }
+}
