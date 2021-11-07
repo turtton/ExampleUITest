@@ -124,7 +124,7 @@ tasks.withType<ScalaCompile> {
 
 tasks.getByName<Jar>("jar") {
     from("LICENSE").also {
-        rename { "${it}_${archives_base_name}" }
+        it.rename { license -> "${license}_${archives_base_name}" }
     }
 }
 
