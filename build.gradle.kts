@@ -112,6 +112,16 @@ java {
     withSourcesJar()
 }
 
+tasks.withType<ScalaCompile> {
+    scalaCompileOptions.apply {
+        additionalParameters = listOf(
+            "-Yretain-trees",
+            "-Xcheck-macros",
+            "-Ykind-projector:underscores"
+        )
+    }
+}
+
 tasks.getByName<Jar>("jar") {
     from("LICENSE").also {
         rename { "${it}_${archives_base_name}" }
