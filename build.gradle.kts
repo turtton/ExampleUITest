@@ -53,6 +53,8 @@ dependencies {
 }
 
 loom {
+    accessWidenerPath.set(file("src/main/resources/exampleuitest.accesswidener"))
+
     runs {
         create("gameTest") {
             server()
