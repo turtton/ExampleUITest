@@ -2,7 +2,8 @@ package com.github.turtton.exampleuitest
 
 import cats.effect.IO
 import cats.effect.unsafe.implicits.global
-import cats.{Monad, MonadThrow, implicits}
+import cats.implicits.given
+import cats.{Monad, MonadThrow}
 import com.comcast.ip4s.SocketAddress
 import com.mojang.brigadier.ParseResults
 import io.github.kory33.s2mctest.core.client.ProtocolPacketAbstraction
@@ -101,9 +102,9 @@ class ChestUITest extends FabricGameTest {
     ](
        using Includes[CodecBinding[LoginStart]][Tuple.Map[LoginServerBoundPackets, CodecBinding]]
      ): DoLoginEv[F, LoginServerBoundPackets, LoginClientBoundPackets] = (
-                                                                           transport: ProtocolBasedTransport[F, LoginClientBoundPackets, LoginServerBoundPackets],
-                                                                           name: String
-                                                                         ) =>
+        transport: ProtocolBasedTransport[F, LoginClientBoundPackets, LoginServerBoundPackets],
+        name: String
+      ) =>
       transport.writePacket(LoginStart(name)) >> transport.nextPacket >>= {
         case ParseResult.Just(LoginPluginRequest(messageId, channel, _)) =>
           MonadThrow[F].pure(x = {
