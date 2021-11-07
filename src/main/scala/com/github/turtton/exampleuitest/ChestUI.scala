@@ -31,7 +31,7 @@ class ChestUI private (syncId: Int, val player: PlayerEntity) extends ScreenHand
 
   override def canUse(player: PlayerEntity): Boolean = true
 
-  override def onSlotClick(i: Int, j: Int, actionType: SlotActionType, playerEntity: PlayerEntity): ItemStack = {
+  override def onSlotClick(i: Int, j: Int, actionType: SlotActionType, playerEntity: PlayerEntity): Unit = {
     if (i == 0 && j == 0) {
       val item = Items.STICK.getDefaultStack.copy()
       if (isClicked) {
@@ -44,7 +44,6 @@ class ChestUI private (syncId: Int, val player: PlayerEntity) extends ScreenHand
       setStackInSlot(0, 0, item)
     }
 
-    ItemStack.EMPTY
   }
 
   class ImmutableSlot(inventory: Inventory, slot: Int) extends Slot(inventory, slot, 0, 0) {
