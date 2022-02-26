@@ -26,6 +26,7 @@ repositories {
     // See https://docs.gradle.org/current/userguide/declaring_repositories.html
     // for more information about repositories.
     maven("https://s01.oss.sonatype.org/service/local/repositories/snapshots/content/")
+    mavenCentral()
 }
 
 val minecraft_version: String by project
@@ -43,13 +44,13 @@ dependencies {
     modImplementation("net.fabricmc.fabric-api:fabric-api:${fabric_version}")
     modImplementation("net.fabricmc:fabric-language-scala:0.3.1.+")
 
-    implementation("io.github.kory33:s2mc-client-core_3:0.1.2-SNAPSHOT")
-    implementation("io.github.kory33:s2mc-client-impl_3:0.1.2-SNAPSHOT")
-    implementation("io.github.kory33:s2mc-protocol-core_3:0.1.2-SNAPSHOT")
-    implementation("io.github.kory33:s2mc-protocol-impl_3:0.1.2-SNAPSHOT")
+    implementS2MC("s2mc-client-core_3")
+    implementS2MC("s2mc-client-impl_3")
+    implementS2MC("s2mc-protocol-core_3")
+    implementS2MC("s2mc-protocol-impl_3")
 
-    implementation("com.comcast:ip4s-core_3:3.1.1")
-    implementation("co.fs2:fs2-core_3:3.2.2")
+    implementation("com.comcast:ip4s-core_3:3.1.2")
+    implementation("co.fs2:fs2-core_3:3.2.4")
     implementation("dev.optics:monocle-core_3:3.1.0")
     implementation("dev.optics:monocle-macro_3:3.1.0")
 //    implementation("org.typelevel:cats-core_3:2.6.1")
@@ -61,6 +62,14 @@ dependencies {
     // You may need to force-disable transitiveness on them.
 //    testImplementation("org.scalatest:scalatest_3:3.2.10")
 //    testImplementation("org.junit.jupiter:junit-jupiter:5.8.1")
+}
+
+fun DependencyHandlerScope.implementS2MC(name: String) {
+    implementation(
+        group = "io.github.kory33",
+        name = name,
+        version = "0.2.3-SNAPSHOT"
+    )
 }
 
 loom {
