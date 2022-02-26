@@ -1,43 +1,50 @@
 package com.github.turtton.exampleuitest
 
-import cats.effect.IO
-import cats.effect.unsafe.implicits.global
-import cats.implicits.given
-import cats.{Monad, MonadThrow}
+import cats.Monad
+import cats.effect.{IO, Temporal}
 import com.comcast.ip4s.SocketAddress
-import com.mojang.brigadier.ParseResults
-import io.github.kory33.s2mctest.core.client.ProtocolPacketAbstraction
-import io.github.kory33.s2mctest.core.client.worldview.{PositionAndOrientation, WorldTime}
+import io.github.kory33.s2mctest.core.client.api.worldview.{PositionAndOrientation, WorldTime}
+import io.github.kory33.s2mctest.core.client.api.{DiscretePath, MinecraftVector, Vector2D}
+import io.github.kory33.s2mctest.core.client.{PacketAbstraction, ProtocolPacketAbstraction}
 import io.github.kory33.s2mctest.core.clientpool.{AccountPool, ClientPool}
-import io.github.kory33.s2mctest.core.connection.codec.interpreters.ParseResult
-import io.github.kory33.s2mctest.core.connection.protocol.CodecBinding
-import io.github.kory33.s2mctest.core.connection.transport.ProtocolBasedTransport
-import io.github.kory33.s2mctest.core.generic.compiletime.Includes
-import io.github.kory33.s2mctest.impl.client.abstraction.{KeepAliveAbstraction, PlayerPositionAbstraction, TimeUpdateAbstraction}
+import io.github.kory33.s2mctest.impl.client.abstraction.{
+  DisconnectAbstraction,
+  KeepAliveAbstraction,
+  PlayerPositionAbstraction,
+  TimeUpdateAbstraction
+}
+import io.github.kory33.s2mctest.impl.client.api.MoveClient
 import io.github.kory33.s2mctest.impl.clientpool.ClientInitializationImpl
-import io.github.kory33.s2mctest.impl.clientpool.ClientInitializationImpl.DoLoginEv
-import io.github.kory33.s2mctest.impl.connection.packets.PacketDataPrimitives.{UnspecifiedLengthByteArray, VarInt}
-import io.github.kory33.s2mctest.impl.connection.packets.PacketIntent.Login.ClientBound.LoginPluginRequest
-import io.github.kory33.s2mctest.impl.connection.packets.PacketIntent.Login.ServerBound.{LoginPluginResponse, LoginStart}
-import io.github.kory33.s2mctest.impl.connection.packets.PacketIntent.Play.ClientBound.PluginMessageClientbound
-import io.github.kory33.s2mctest.impl.connection.protocol.versions.v19w02a.{loginProtocol, playProtocol, protocolVersion}
+import io.github.kory33.s2mctest.impl.connection.packets.PacketIntent.Play.ServerBound.{
+  Player,
+  PlayerLook,
+  PlayerPosition,
+  PlayerPositionLook
+}
 import monocle.Lens
 import monocle.macros.GenLens
+
+import scala.concurrent.duration.FiniteDuration
+
 import net.fabricmc.fabric.api.gametest.v1.FabricGameTest
 import net.minecraft.test.{GameTest, TestContext}
 
-import java.awt.font.GlyphJustificationInfo
-import java.io.IOException
-
 
 class ChestUITest extends FabricGameTest {
+  import io.github.kory33.s2mctest.impl.connection.protocol.versions
+  import versions.v1_17_1.{protocolVersion, loginProtocol, playProtocol}
+  import cats.effect.unsafe.implicits.global
+
+  import cats.implicits.given
+  import spire.implicits.given
+  import scala.concurrent.duration.given
 
   @GameTest(structureName = FabricGameTest.EMPTY_STRUCTURE)
   def openAndClickUI(context: TestContext): Unit = {
     val address = SocketAddress.fromString("localhost:25565").get
 
     val packetAbstraction = ProtocolPacketAbstraction
-      .empty[IO, WorldView](playProtocol.asViewedFromClient)
+      .empty[IO, WorldView](playProtocol)
       .thenAbstractWithLens(KeepAliveAbstraction.forProtocol, WorldView.unitLens)
       .thenAbstractWithLens(PlayerPositionAbstraction.forProtocol, WorldView.positionLens)
       .thenAbstractWithLens(TimeUpdateAbstraction.forProtocol, WorldView.worldTimeLens)
@@ -47,76 +54,48 @@ class ChestUITest extends FabricGameTest {
     val clientPool = ClientPool
       .withInitData(
         accountPool,
-        WorldView(PositionAndOrientation(0, 0, 0, 0, 0), WorldTime(0, 0)),
-        ClientInitializationImpl(
-          address,
-          //1.17.1 protocol version
-          VarInt(756), loginProtocol, playProtocol, packetAbstraction
-        )(using DoModLoginEv.doLoginWithPlugin)
+        WorldView(PositionAndOrientation.zero, WorldTime.zero),
+        ClientInitializationImpl(address,
+          protocolVersion,
+          loginProtocol,
+          playProtocol,
+          packetAbstraction
+        )
       )
       .cached(50)
       .unsafeRunSync()
 
-    val program: IO[Unit] = clientPool.recycledClient.use { client =>
-      Monad[IO].foreverM {
-        for {
-          packet <- client.nextPacket
-          state <- client.worldView
-          _ <- IO(println((packet, state)))
-        } yield ()
+    val program: IO[Unit] = clientPool
+      .recycledClient
+      .use { client =>
+        client.readLoopAndDiscard.use { _ =>
+          IO.sleep(1000.seconds)
+        }
       }
-    }
-    program.unsafeRunAsync((either) => {
-      either match {
-        case Left(exception) => exception.printStackTrace()
-        case Right(_) => {}
-      }
-    })
+      .void
+
+
 
     //TODO: connect TestClient and wait
-    context.waitAndRun(60, new Runnable {
-      override def run(): Unit = {
-        val player = context.getWorld.getPlayers.get(0)
-        ChestUI.open(player)
-        context.complete()
-      }
+    context.waitAndRun(60, () => {
+      val player = context.getWorld.getPlayers.get(0)
+      ChestUI.open(player)
+      context.complete()
     })
 
 
+    program.unsafeRunAsync(_ => {})
 
     //TODO: click slot 0 item and check display name
   }
 
 
-  private case class WorldView(position: PositionAndOrientation, worldTime: WorldTime)
-
-  private object WorldView {
-    val unitLens: Lens[WorldView, Unit] = Lens[WorldView, Unit](_ => ())(_ => s => s)
-    val worldTimeLens: Lens[WorldView, WorldTime] = GenLens[WorldView](_.worldTime)
-    val positionLens: Lens[WorldView, PositionAndOrientation] = GenLens[WorldView](_.position)
+  case class WorldView(position: PositionAndOrientation, worldTime: WorldTime)
+  object WorldView {
+    given unitLens: Lens[WorldView, Unit] = Lens[WorldView, Unit](_ => ())(_ => s => s)
+    given worldTimeLens: Lens[WorldView, WorldTime] = GenLens[WorldView](_.worldTime)
+    given positionLens: Lens[WorldView, PositionAndOrientation] = GenLens[WorldView](_.position)
   }
 
-  object DoModLoginEv {
-    inline given doLoginWithPlugin[
-      F[_] : MonadThrow, LoginServerBoundPackets <: Tuple, LoginClientBoundPackets <: Tuple : Includes[LoginPluginRequest]
-    ](
-       using Includes[CodecBinding[LoginStart]][Tuple.Map[LoginServerBoundPackets, CodecBinding]]
-     ): DoLoginEv[F, LoginServerBoundPackets, LoginClientBoundPackets] = (
-        transport: ProtocolBasedTransport[F, LoginClientBoundPackets, LoginServerBoundPackets],
-        name: String
-      ) =>
-      transport.writePacket(LoginStart(name)) >> transport.nextPacket >>= {
-        case ParseResult.Just(LoginPluginRequest(messageId, channel, _)) =>
-          MonadThrow[F].pure(x = {
-            //FIXME: ここどうやって書くんだ…？LoginPluginResponseはこれでは返せてないらしい
-            println(s"$messageId:$channel")
-            LoginPluginResponse(messageId, false, UnspecifiedLengthByteArray(Array.emptyByteArray))
-          })
-        case failture =>
-          MonadThrow[F].raiseError(IOException {
-            s""
-          })
-      }
-  }
 
 }
