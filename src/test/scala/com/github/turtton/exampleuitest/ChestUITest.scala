@@ -64,12 +64,14 @@ class ChestUITest extends FabricGameTest {
               case _: JoinGame_WorldNames_IsHard => IO.pure(None)
               case _: DeclareRecipes => IO {
                 context.getWorld.getServer.execute(() => {
+                    //Open Chest Inventory Window
                     val player = context.getWorld.getServer.getPlayerManager.getPlayer(client.identity.uuid)
                     println("Open Window")
                     ChestUI.open(player)
                 })} >> IO.pure(None)
               case windowPacket: WindowOpen => IO {
                 println(s"Window opened!${windowPacket.title.json}")
+                //TODO: click slot 0 item and check item name
                 context.getWorld.getServer.execute(() => {
                   context.complete()
                 })
