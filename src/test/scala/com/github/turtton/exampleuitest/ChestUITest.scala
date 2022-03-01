@@ -61,14 +61,15 @@ class ChestUITest extends FabricGameTest {
           case client.ReadLoopStepResult.WorldUpdate(view) => IO.pure(None)
           case client.ReadLoopStepResult.PacketArrived(packet) =>
             packet match {
-              case _: JoinGame_WorldNames_IsHard | _:DeclareRecipes => IO {
+              case _: JoinGame_WorldNames_IsHard => IO.pure(None)
+              case _: DeclareRecipes => IO {
                 context.getWorld.getServer.execute(() => {
-                  val player = context.getWorld.getServer.getPlayerManager.getPlayer(client.identity.uuid)
-                  println("Open Window")
-                  ChestUI.open(player)
+                    val player = context.getWorld.getServer.getPlayerManager.getPlayer(client.identity.uuid)
+                    println("Open Window")
+                    ChestUI.open(player)
                 })} >> IO.pure(None)
-              case windowPacket: WindowOpen => IO{
-                println(s"openWindow!${windowPacket.title.json}")
+              case windowPacket: WindowOpen => IO {
+                println(s"Window opened!${windowPacket.title.json}")
                 context.getWorld.getServer.execute(() => {
                   context.complete()
                 })
@@ -79,8 +80,6 @@ class ChestUITest extends FabricGameTest {
       }
       .void
       .unsafeRunAsync(_ => {})
-
-    //TODO: click slot 0 item and check display name
   }
 
 
