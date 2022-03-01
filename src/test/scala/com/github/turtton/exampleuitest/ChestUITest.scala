@@ -10,6 +10,7 @@ import io.github.kory33.s2mctest.core.clientpool.{AccountPool, ClientPool}
 import io.github.kory33.s2mctest.impl.client.abstraction.{DisconnectAbstraction, KeepAliveAbstraction, PlayerPositionAbstraction, TimeUpdateAbstraction}
 import io.github.kory33.s2mctest.impl.client.api.MoveClient
 import io.github.kory33.s2mctest.impl.clientpool.ClientInitializationImpl
+import io.github.kory33.s2mctest.impl.connection.packets.PacketIntent.Play.ClientBound.{DeclareRecipes, JoinGame_WorldNames_IsHard, WindowOpen}
 import io.github.kory33.s2mctest.impl.connection.packets.PacketIntent.Play.ServerBound.{Player, PlayerLook, PlayerPosition, PlayerPositionLook}
 import monocle.Lens
 import monocle.macros.GenLens
@@ -35,16 +36,15 @@ class ChestUITest extends FabricGameTest {
     val packetAbstraction = ProtocolPacketAbstraction
       .empty[IO, WorldView](playProtocol)
       .thenAbstractWithLens(KeepAliveAbstraction.forProtocol, WorldView.unitLens)
-      .thenAbstractWithLens(PlayerPositionAbstraction.forProtocol, WorldView.positionLens)
-      .thenAbstractWithLens(TimeUpdateAbstraction.forProtocol, WorldView.worldTimeLens)
 
     val accountPool = AccountPool.default[IO].unsafeRunSync()
 
-    val clientPool = ClientPool
+    val clientPool: ClientPool[IO, ?, ?, WorldView] = ClientPool
       .withInitData(
         accountPool,
-        WorldView(PositionAndOrientation.zero, WorldTime.zero),
-        ClientInitializationImpl(address,
+        WorldView(),
+        ClientInitializationImpl(
+          address,
           protocolVersion,
           loginProtocol,
           playProtocol,
@@ -54,32 +54,36 @@ class ChestUITest extends FabricGameTest {
       .cached(50)
       .unsafeRunSync()
 
-    val program: IO[Unit] = clientPool
+    context.waitAndRun(40, () => {
+      val player = context.getWorld.getPlayers.get(0)
+      println("Open Window")
+      ChestUI.open(player)
+      context.waitAndRun(60, () => context.complete())
+    })
+
+    clientPool
       .recycledClient
       .use { client =>
-        client.readLoopAndDiscard.use { _ =>
-          IO.sleep(1000.seconds)
+        client.readLoopUntilDefined[Nothing] {
+          case client.ReadLoopStepResult.WorldUpdate(view) => IO.pure(None)
+          case client.ReadLoopStepResult.PacketArrived(packet) =>
+            packet match {
+              case _: JoinGame_WorldNames_IsHard | _:DeclareRecipes => IO.pure(None)
+              case windowPacket: WindowOpen => IO(println(s"openWindow!${windowPacket.title.json}")) >> IO.pure(None)
+              case _ => IO(println(s"packet: $packet")) >> IO.pure(None)
+            }
         }
       }
       .void
-
-    context.waitAndRun(60, () => {
-      val player = context.getWorld.getPlayers.get(0)
-      ChestUI.open(player)
-      context.complete()
-    })
-
-    program.unsafeRunAsync(_ => {})
+      .unsafeRunAsync(_ => {})
 
     //TODO: click slot 0 item and check display name
   }
 
 
-  case class WorldView(position: PositionAndOrientation, worldTime: WorldTime)
+  case class WorldView()
   object WorldView {
     given unitLens: Lens[WorldView, Unit] = Lens[WorldView, Unit](_ => ())(_ => s => s)
-    given worldTimeLens: Lens[WorldView, WorldTime] = GenLens[WorldView](_.worldTime)
-    given positionLens: Lens[WorldView, PositionAndOrientation] = GenLens[WorldView](_.position)
   }
 
 
