@@ -42,7 +42,7 @@ class ChestUITest extends FabricGameTest {
 
   import scala.concurrent.duration.given
 
-  @GameTest(structureName = FabricGameTest.EMPTY_STRUCTURE)
+  @GameTest(structureName = FabricGameTest.EMPTY_STRUCTURE, tickLimit = 200)
   def openAndClickUI(context: TestContext): Unit = {
     val address = SocketAddress.fromString("localhost:25565").get
 
