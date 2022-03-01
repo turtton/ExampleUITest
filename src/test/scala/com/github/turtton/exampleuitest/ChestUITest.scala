@@ -7,18 +7,31 @@ import io.github.kory33.s2mctest.core.client.api.worldview.{PositionAndOrientati
 import io.github.kory33.s2mctest.core.client.api.{DiscretePath, MinecraftVector, Vector2D}
 import io.github.kory33.s2mctest.core.client.{PacketAbstraction, ProtocolPacketAbstraction}
 import io.github.kory33.s2mctest.core.clientpool.{AccountPool, ClientPool}
-import io.github.kory33.s2mctest.impl.client.abstraction.{DisconnectAbstraction, KeepAliveAbstraction, PlayerPositionAbstraction, TimeUpdateAbstraction}
+import io.github.kory33.s2mctest.impl.client.abstraction.{
+  DisconnectAbstraction,
+  KeepAliveAbstraction,
+  PlayerPositionAbstraction,
+  TimeUpdateAbstraction
+}
 import io.github.kory33.s2mctest.impl.client.api.MoveClient
 import io.github.kory33.s2mctest.impl.clientpool.ClientInitializationImpl
-import io.github.kory33.s2mctest.impl.connection.packets.PacketIntent.Play.ClientBound.{DeclareRecipes, JoinGame_WorldNames_IsHard, WindowOpen}
-import io.github.kory33.s2mctest.impl.connection.packets.PacketIntent.Play.ServerBound.{Player, PlayerLook, PlayerPosition, PlayerPositionLook}
+import io.github.kory33.s2mctest.impl.connection.packets.PacketIntent.Play.ClientBound.{
+  DeclareRecipes,
+  JoinGame_WorldNames_IsHard,
+  WindowOpen
+}
+import io.github.kory33.s2mctest.impl.connection.packets.PacketIntent.Play.ServerBound.{
+  Player,
+  PlayerLook,
+  PlayerPosition,
+  PlayerPositionLook
+}
 import monocle.Lens
 import monocle.macros.GenLens
 import net.fabricmc.fabric.api.gametest.v1.FabricGameTest
 import net.minecraft.test.{GameTest, TestContext}
 
 import scala.concurrent.duration.FiniteDuration
-
 
 class ChestUITest extends FabricGameTest {
   import cats.effect.unsafe.implicits.global
@@ -62,20 +75,33 @@ class ChestUITest extends FabricGameTest {
           case client.ReadLoopStepResult.PacketArrived(packet) =>
             packet match {
               case _: JoinGame_WorldNames_IsHard => IO.pure(None)
-              case _: DeclareRecipes => IO {
-                context.getWorld.getServer.execute(() => {
-                    //Open Chest Inventory Window
-                    val player = context.getWorld.getServer.getPlayerManager.getPlayer(client.identity.uuid)
-                    println("Open Window")
-                    ChestUI.open(player)
-                })} >> IO.pure(None)
-              case windowPacket: WindowOpen => IO {
-                println(s"Window opened!${windowPacket.title.json}")
-                //TODO: click slot 0 item and check item name
-                context.getWorld.getServer.execute(() => {
-                  context.complete()
-                })
-              } >> IO.pure(None)
+              case _: DeclareRecipes =>
+                IO {
+                  context
+                    .getWorld
+                    .getServer
+                    .execute(() => {
+                      //Open Chest Inventory Window
+                      val player = context
+                        .getWorld
+                        .getServer
+                        .getPlayerManager
+                        .getPlayer(client.identity.uuid)
+                      println("Open Window")
+                      ChestUI.open(player)
+                    })
+                } >> IO.pure(None)
+              case windowPacket: WindowOpen =>
+                IO {
+                  println(s"Window opened!${windowPacket.title.json}")
+                  //TODO: click slot 0 item and check item name
+                  context
+                    .getWorld
+                    .getServer
+                    .execute(() => {
+                      context.complete()
+                    })
+                } >> IO.pure(None)
               case _ => IO(println(s"packet: $packet")) >> IO.pure(None)
             }
         }
@@ -84,11 +110,8 @@ class ChestUITest extends FabricGameTest {
       .unsafeRunAsync(_ => {})
   }
 
-
   case class WorldView()
   object WorldView {
     given unitLens: Lens[WorldView, Unit] = Lens[WorldView, Unit](_ => ())(_ => s => s)
   }
-
-
 }
