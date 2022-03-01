@@ -107,7 +107,11 @@ class ChestUITest extends FabricGameTest {
         }
       }
       .void
-      .unsafeRunAsync(_ => {})
+      .unsafeRunAsync {
+        case Left(ex) =>
+          ex.printStackTrace()
+        case Right(_) =>
+      }
   }
 
   case class WorldView()
