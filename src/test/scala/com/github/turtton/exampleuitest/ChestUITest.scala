@@ -54,13 +54,6 @@ class ChestUITest extends FabricGameTest {
       .cached(50)
       .unsafeRunSync()
 
-    context.waitAndRun(40, () => {
-      val player = context.getWorld.getPlayers.get(0)
-      println("Open Window")
-      ChestUI.open(player)
-      context.waitAndRun(60, () => context.complete())
-    })
-
     clientPool
       .recycledClient
       .use { client =>
@@ -68,8 +61,18 @@ class ChestUITest extends FabricGameTest {
           case client.ReadLoopStepResult.WorldUpdate(view) => IO.pure(None)
           case client.ReadLoopStepResult.PacketArrived(packet) =>
             packet match {
-              case _: JoinGame_WorldNames_IsHard | _:DeclareRecipes => IO.pure(None)
-              case windowPacket: WindowOpen => IO(println(s"openWindow!${windowPacket.title.json}")) >> IO.pure(None)
+              case _: JoinGame_WorldNames_IsHard | _:DeclareRecipes => IO {
+                context.getWorld.getServer.execute(() => {
+                  val player = context.getWorld.getServer.getPlayerManager.getPlayer(client.identity.uuid)
+                  println("Open Window")
+                  ChestUI.open(player)
+                })} >> IO.pure(None)
+              case windowPacket: WindowOpen => IO{
+                println(s"openWindow!${windowPacket.title.json}")
+                context.getWorld.getServer.execute(() => {
+                  context.complete()
+                })
+              } >> IO.pure(None)
               case _ => IO(println(s"packet: $packet")) >> IO.pure(None)
             }
         }
