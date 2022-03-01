@@ -20,6 +20,7 @@ class ChestUI private (syncId: Int, val player: PlayerEntity) extends ScreenHand
   for (i <- 1 until size) {
     addSlot(new ImmutableSlot(inventory, i))
   }
+  setStackInSlot(0, 0, getItem)
 
   for (
     y <- 0 until 3;
@@ -33,17 +34,17 @@ class ChestUI private (syncId: Int, val player: PlayerEntity) extends ScreenHand
 
   override def onSlotClick(i: Int, j: Int, actionType: SlotActionType, playerEntity: PlayerEntity): Unit = {
     if (i == 0 && j == 0) {
-      val item = Items.STICK.getDefaultStack.copy()
-      if (isClicked) {
-        item.setCustomName(new LiteralText("Clicked"))
-      } else {
-        item.setCustomName(new LiteralText("ClickMe"))
-      }
       isClicked = !isClicked
-
-      setStackInSlot(0, 0, item)
+      setStackInSlot(0, 0, getItem)
     }
 
+  }
+
+  private def getItem: ItemStack = {
+    val item = Items.STICK.getDefaultStack.copy()
+    val name = if (isClicked) LiteralText("Clicked") else LiteralText("ClickMe")
+    item.setCustomName(name)
+    item
   }
 
   class ImmutableSlot(inventory: Inventory, slot: Int) extends Slot(inventory, slot, 0, 0) {
