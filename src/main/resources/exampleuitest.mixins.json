@@ -4,6 +4,7 @@
   "package": "com.github.turtton.exampleuitest.mixin",
   "compatibilityLevel": "JAVA_16",
   "mixins": [
+    "MixinTestCommand",
     "MixinTestServer"
   ],
   "injectors": {
