@@ -7,25 +7,11 @@ import io.github.kory33.s2mctest.core.client.api.worldview.{PositionAndOrientati
 import io.github.kory33.s2mctest.core.client.api.{DiscretePath, MinecraftVector, Vector2D}
 import io.github.kory33.s2mctest.core.client.{PacketAbstraction, ProtocolPacketAbstraction}
 import io.github.kory33.s2mctest.core.clientpool.{AccountPool, ClientPool}
-import io.github.kory33.s2mctest.impl.client.abstraction.{
-  DisconnectAbstraction,
-  KeepAliveAbstraction,
-  PlayerPositionAbstraction,
-  TimeUpdateAbstraction
-}
+import io.github.kory33.s2mctest.impl.client.abstraction.{DisconnectAbstraction, KeepAliveAbstraction, PlayerPositionAbstraction, TimeUpdateAbstraction}
 import io.github.kory33.s2mctest.impl.client.api.MoveClient
 import io.github.kory33.s2mctest.impl.clientpool.ClientInitializationImpl
-import io.github.kory33.s2mctest.impl.connection.packets.PacketIntent.Play.ClientBound.{
-  DeclareRecipes,
-  JoinGame_WorldNames_IsHard,
-  WindowOpen
-}
-import io.github.kory33.s2mctest.impl.connection.packets.PacketIntent.Play.ServerBound.{
-  Player,
-  PlayerLook,
-  PlayerPosition,
-  PlayerPositionLook
-}
+import io.github.kory33.s2mctest.impl.connection.packets.PacketIntent.Play.ClientBound.{DeclareRecipes, JoinGame_WorldNames_IsHard, WindowOpen}
+import io.github.kory33.s2mctest.impl.connection.packets.PacketIntent.Play.ServerBound.{Player, PlayerLook, PlayerPosition, PlayerPositionLook}
 import monocle.Lens
 import monocle.macros.GenLens
 import net.fabricmc.fabric.api.gametest.v1.FabricGameTest

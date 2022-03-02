@@ -19,6 +19,17 @@ val maven_group: String by project
 version = mod_version
 group = maven_group
 
+sourceSets {
+    val main = main.get()
+    create("gametest") {
+        compileClasspath += main.compileClasspath
+        compileClasspath += main.output
+        runtimeClasspath +=main.runtimeClasspath
+        runtimeClasspath += main.output
+    }
+}
+val gameTestSource = sourceSets.getByName("gametest")
+
 repositories {
     // Add repositories to retrieve artifacts from in here.
     // You should only use this when depending on other mods because
@@ -82,7 +93,7 @@ loom {
             vmArgs += "-Dfabric-api.gametest"
             vmArgs += "-Dfabric.api.gametest.report-file=${project.buildDir}/junit.xml"
             runDir = "gametest"
-            setSource(sourceSets.test.get())
+            setSource(gameTestSource)
             isIdeConfigGenerated = true
         }
     }
