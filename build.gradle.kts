@@ -79,7 +79,7 @@ fun DependencyHandlerScope.implementS2MC(name: String) {
     implementation(
         group = "io.github.kory33",
         name = name,
-        version = "0.2.3-SNAPSHOT"
+        version = "0.2.4-SNAPSHOT"
     )
 }
 
