@@ -10,7 +10,7 @@ import io.github.kory33.s2mctest.core.clientpool.{AccountPool, ClientPool}
 import io.github.kory33.s2mctest.impl.client.abstraction.{DisconnectAbstraction, KeepAliveAbstraction, PlayerPositionAbstraction, TimeUpdateAbstraction}
 import io.github.kory33.s2mctest.impl.client.api.MoveClient
 import io.github.kory33.s2mctest.impl.clientpool.ClientInitializationImpl
-import io.github.kory33.s2mctest.impl.connection.packets.PacketIntent.Play.ClientBound.{DeclareRecipes, JoinGame_WorldNames_IsHard, WindowOpen}
+import io.github.kory33.s2mctest.impl.connection.packets.PacketIntent.Play.ClientBound.{ChunkData_withBlockEntity, DeclareRecipes, JoinGame_WorldNames_IsHard, UpdateLight_WithTrust, WindowOpen_VarInt}
 import io.github.kory33.s2mctest.impl.connection.packets.PacketIntent.Play.ServerBound.{Player, PlayerLook, PlayerPosition, PlayerPositionLook}
 import monocle.Lens
 import monocle.macros.GenLens
@@ -60,7 +60,7 @@ class ChestUITest extends FabricGameTest {
           case client.ReadLoopStepResult.WorldUpdate(view) => IO.pure(None)
           case client.ReadLoopStepResult.PacketArrived(packet) =>
             packet match {
-              case _: JoinGame_WorldNames_IsHard => IO.pure(None)
+              case _: JoinGame_WorldNames_IsHard | _: ChunkData_withBlockEntity | _: UpdateLight_WithTrust => IO.pure(None)
               case _: DeclareRecipes =>
                 IO {
                   context
