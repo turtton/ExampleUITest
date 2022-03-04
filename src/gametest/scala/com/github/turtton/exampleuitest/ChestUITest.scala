@@ -77,7 +77,7 @@ class ChestUITest extends FabricGameTest {
                       ChestUI.open(player)
                     })
                 } >> IO.pure(None)
-              case windowPacket: WindowOpen =>
+              case windowPacket: WindowOpen_VarInt =>
                 IO {
                   println(s"Window opened!${windowPacket.title.json}")
                   //TODO: click slot 0 item and check item name
