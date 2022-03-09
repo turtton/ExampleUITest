@@ -98,10 +98,8 @@ class ChestUITest extends FabricGameTest {
                   }
                 } >> IO.pure(None)
               case windowState: WindowItems_withState[Upto_1_17_1] =>
-                  println(windowState)
                   val windowId = windowState.windowId.asShort.toInt
                   if (client.worldView.unsafeRunSync().targetWindowId == windowId) {
-                    println("Begin searching")
                     windowState
                       .items
                       .asVector
@@ -117,12 +115,13 @@ class ChestUITest extends FabricGameTest {
                           item.nbt.map {
                             case NBTCompoundOrEnd.Compound(compound) =>
                               compound.getNestedValue[String]("display", "Name").map { displayName =>
-                                return if (displayName == Text.Serializer.toJson(ChestUI.ITEM_DISPLAY_CLICK_ME)) {
-                                  println("Send Click Packet")
-                                  client.writePacket(ClickWindow_State[Upto_1_17_1](UByte(windowId.toShort), VarInt(1), 0, 0, VarInt(0), LenPrefixedSeq(Vector.empty), Upto_1_17_1(false, None, None, None))) >> IO.none
+                                if (displayName == Text.Serializer.toJson(ChestUI.ITEM_DISPLAY_CLICK_ME)) {
+                                  IO(println("Send Click Packet"))
+                                    >> client.writePacket(ClickWindow_State[Upto_1_17_1](windowState.windowId, VarInt(0), 0, 0, VarInt(0), LenPrefixedSeq(Vector.empty), Upto_1_17_1(false, None, None, None)))
+                                    >> IO.none
                                 } else if (displayName == Text.Serializer.toJson(ChestUI.ITEM_DISPLAY_CLICKED)) {
                                   //Ok
-                                  IO(context.getWorld.getServer.execute(() => context.complete())) >> IO.pure(true)
+                                  IO(context.getWorld.getServer.execute(() => context.complete())) >> IO.some(true)
                                 } else IO.none
                               }.getOrElse(IO.none)
                             case _ => IO.none
