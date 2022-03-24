@@ -8,15 +8,11 @@
   "contact": {},
   "license": "MIT",
   "environment": "server",
-  "accessWidener": "exampleuitest.accesswidener",
   "entrypoints": {
     "main": [
       "com.github.turtton.exampleuitest.Exampleuitest"
     ]
   },
-  "mixins": [
-    "exampleuitest.mixins.json"
-  ],
   "depends": {
     "fabricloader": ">=0.12.3",
     "fabric": "*",

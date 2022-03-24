@@ -37,6 +37,7 @@ repositories {
     // See https://docs.gradle.org/current/userguide/declaring_repositories.html
     // for more information about repositories.
     maven("https://s01.oss.sonatype.org/service/local/repositories/snapshots/content/")
+    maven("https://maven.turtton.net")
     mavenCentral()
 }
 
@@ -54,6 +55,8 @@ dependencies {
     // Fabric API. This is technically optional, but you probably want it anyway.
     modImplementation("net.fabricmc.fabric-api:fabric-api:${fabric_version}")
     modImplementation("net.fabricmc:fabric-language-scala:0.3.1.+")
+
+    modImplementation("net.turtton:weaver:0.1.4")
 
     implementS2MC("s2mc-client-core_3")
     implementS2MC("s2mc-client-impl_3")
@@ -84,8 +87,6 @@ fun DependencyHandlerScope.implementS2MC(name: String) {
 }
 
 loom {
-    accessWidenerPath.set(file("src/main/resources/exampleuitest.accesswidener"))
-
     runs {
         create("gameTest") {
             server()
